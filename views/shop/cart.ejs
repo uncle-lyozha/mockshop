@@ -7,5 +7,14 @@
 
     <main>
       <h1>CART</h1>
+      <% if (products.length > 0) { %>
+        <ul>
+          <% products.forEach(p => { %>
+            <li><%= p.productData.title %> (<%= p.qty %>)</li>
+          <% }); %>
+        </ul>
+      <% } else { %>
+        <h1>No Products in Cart</h1>
+      <% } %>
     </main>
 <%- include('../includes/end.ejs') %>
