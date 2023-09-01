@@ -4,9 +4,11 @@ const path = require("path");
 
 const adminRoutes = require("./routes/admin");
 const shopRoutes = require("./routes/shop");
-
 const errorController = require("./controllers/error");
+
 const sequelize = require("./util/mysql");
+const User = require("./models/user");
+const Product = require("./models/product");
 
 const app = express();
 
@@ -21,11 +23,14 @@ app.use(shopRoutes);
 
 app.use(errorController.get404);
 
+User.hasMany(Product);
+
 sequelize
+  // .sync({ force: true })
   .sync()
-  .then((result) => {
+  .then(result => {
     app.listen(3000);
   })
-  .catch((err) => {
+  .catch(err => {
     console.log(err);
   });
