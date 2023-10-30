@@ -13,6 +13,7 @@ exports.postAddProduct = (req, res, next) => {
   const imageURL = req.body.imageUrl;
   const price = req.body.price;
   const description = req.body.description;
+
   const product = new Product(
     title,
     price,
@@ -38,6 +39,7 @@ exports.getEditProduct = (req, res, next) => {
     return res.redirect("/");
   }
   const prodID = req.params.productID;
+
   Product.findById(prodID)
     .then(product => {
       if (!product) {
@@ -77,6 +79,7 @@ exports.postEditProduct = (req, res, next) => {
 };
 
 exports.getProducts = (req, res, next) => {
+
   Product.fetchAll()
     .then(products => {
       res.render("admin/products", {
