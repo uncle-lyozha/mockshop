@@ -82,9 +82,9 @@ exports.postOrder = (req, res, next) => {
   req.user
     .populate("cart.items.productId")
     .then(products => {
-      // console.log(products.cart.items);
+      console.log(products.cart.items);
       const items = products.cart.items.map(i => {
-        return { products: i.productId, quantity: i.quantity };
+        return { products: { ...i.productId._doc }, quantity: i.quantity };
       });
       console.log("Output>>>  " + items);
       const order = new Order({
@@ -97,14 +97,16 @@ exports.postOrder = (req, res, next) => {
       return order.save();
     })
     .then(() => {
+      return req.user.clearCart();
+    })
+    .then(() => {
       res.redirect("/orders");
     })
     .catch(err => console.log(err));
 };
 
 exports.getOrders = (req, res, next) => {
-  req.user
-    .getOrders()
+  Order.find({ "user.userId": req.user._id })
     .then(orders => {
       res.render("shop/orders", {
         path: "/orders",
