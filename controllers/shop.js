@@ -117,15 +117,15 @@ exports.getOrders = (req, res, next) => {
     .catch(err => console.log(err));
 };
 
-exports.getCheckout = (req, res, next) => {
-  req.user
-    .getOrders()
-    .then(orders => {
-      res.render("shop/orders", {
-        path: "/orders",
-        pageTitle: "Your Orders",
-        orders: orders,
-      });
-    })
-    .catch(err => console.log(err));
-};
+// exports.getCheckout = (req, res, next) => {
+//   req.user
+//     .getOrders()
+//     .then(orders => {
+//       res.render("shop/orders", {
+//         path: "/orders",
+//         pageTitle: "Your Orders",
+//         orders: orders,
+//       });
+//     })
+//     .catch(err => console.log(err));
+// };
