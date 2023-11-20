@@ -7,6 +7,7 @@ const mongoose = require("mongoose");
 
 const adminRoutes = require("./routes/admin");
 const shopRoutes = require("./routes/shop");
+const authRoutes = require("./routes/auth");
 const errorController = require("./controllers/error");
 
 const User = require("./models/user");
@@ -24,7 +25,7 @@ app.use((req, res, next) => {
     .then(user => {
       req.user = user;
       next();
-    }) 
+    })
     .catch(err => {
       console.log(err);
     });
@@ -32,6 +33,7 @@ app.use((req, res, next) => {
 
 app.use("/admin", adminRoutes);
 app.use(shopRoutes);
+app.use(authRoutes);
 app.use(errorController.get404);
 
 mongoose
@@ -39,8 +41,8 @@ mongoose
     `mongodb+srv://${process.env.USER}:${process.env.PASS}@mockshop.o4n7ofw.mongodb.net/shop?retryWrites=true&w=majority`
   )
   .then(() => {
-    User.findOne().then(user=>{
-      if(!user) {
+    User.findOne().then(user => {
+      if (!user) {
         const user = new User({
           name: "Aleks",
           email: "aleks@test.com",
@@ -48,7 +50,7 @@ mongoose
         });
         user.save();
       }
-    })
+    });
     app.listen(3000);
     console.log("App started on Port:3000");
   })

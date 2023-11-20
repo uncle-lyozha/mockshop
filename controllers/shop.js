@@ -46,7 +46,6 @@ exports.getCart = (req, res, next) => {
   req.user
     .populate("cart.items.productId")
     .then(products => {
-      console.log(products.cart.items);
       res.render("shop/cart", {
         pageTitle: "Your Cart",
         path: "/cart",
@@ -63,7 +62,6 @@ exports.postCart = (req, res, next) => {
       return req.user.addToCart(product);
     })
     .then(result => {
-      console.log(result);
       res.redirect("/cart");
     });
 };
@@ -82,19 +80,27 @@ exports.postOrder = (req, res, next) => {
   req.user
     .populate("cart.items.productId")
     .then(products => {
-      // console.log(products.cart.items);
       const items = products.cart.items.map(i => {
-        return { products: i.productId, quantity: i.quantity };
+        return { products: { ...i.productId._doc }, quantity: i.quantity };
       });
-      console.log("Output>>>  " + items);
+
+      const amount = items.reduce(
+        (acc, curr) => acc + curr.products.price * curr.quantity,
+        0
+      ).toFixed(2);
+
       const order = new Order({
         items: items,
         user: {
           name: req.user.name,
           userId: req.user,
         },
+        amount: amount,
       });
       return order.save();
+    })
+    .then(() => {
+      return req.user.clearCart();
     })
     .then(() => {
       res.redirect("/orders");
@@ -103,8 +109,7 @@ exports.postOrder = (req, res, next) => {
 };
 
 exports.getOrders = (req, res, next) => {
-  req.user
-    .getOrders()
+  Order.find({ "user.userId": req.user._id })
     .then(orders => {
       res.render("shop/orders", {
         path: "/orders",
@@ -115,15 +120,15 @@ exports.getOrders = (req, res, next) => {
     .catch(err => console.log(err));
 };
 
-exports.getCheckout = (req, res, next) => {
-  req.user
-    .getOrders()
-    .then(orders => {
-      res.render("shop/orders", {
-        path: "/orders",
-        pageTitle: "Your Orders",
-        orders: orders,
-      });
-    })
-    .catch(err => console.log(err));
-};
+// exports.getCheckout = (req, res, next) => {
+//   req.user
+//     .getOrders()
+//     .then(orders => {
+//       res.render("shop/orders", {
+//         path: "/orders",
+//         pageTitle: "Your Orders",
+//         orders: orders,
+//       });
+//     })
+//     .catch(err => console.log(err));
+// };
