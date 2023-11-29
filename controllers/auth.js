@@ -2,12 +2,33 @@ const bcrypt = require("bcryptjs");
 
 const User = require("../models/user");
 
+const nodemailer = require("nodemailer");
+
+let transporter = nodemailer.createTransport({
+  host: "smtp-relay.brevo.com",
+  port: 587,
+  secure: false, // true for 465, false for other ports
+  auth: {
+    user: `${process.env.BREVO_USER}`,
+    pass: `${process.env.BREVO_PASS}`,
+  },
+});
+
+// verify connection configuration
+transporter.verify(function (error, success) {
+  if (error) {
+    console.log(error);
+  } else {
+    console.log("Server is ready to take our messages");
+  }
+});
+
 exports.getLogin = (req, res, next) => {
   let message = req.flash("error");
   if (message.length > 0) {
-    message = message[0]
+    message = message[0];
   } else {
-    message = null
+    message = null;
   }
   res.render("auth/login", {
     path: "/login",
@@ -19,9 +40,9 @@ exports.getLogin = (req, res, next) => {
 exports.getSignup = (req, res) => {
   let message = req.flash("error");
   if (message.length > 0) {
-    message = message[0]
+    message = message[0];
   } else {
-    message = null
+    message = null;
   }
   res.render("auth/signup", {
     path: "/signup",
@@ -92,6 +113,15 @@ exports.postSignUp = (req, res) => {
         })
         .then(() => {
           res.redirect("/login");
+          return transporter.sendMail({
+            to: email,
+            from: "shop@lyozha.com",
+            subject: "Signup succeeded!",
+            html: "<h1>Signup succeeded!</h1>",
+          });
+        })
+        .catch(err => {
+          console.log(err);
         });
     })
     .catch(err => {
