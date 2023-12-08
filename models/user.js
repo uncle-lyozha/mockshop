@@ -17,6 +17,8 @@ const userSchema = new Schema({
     required: true,
     min: [4, "Too small, try again"],
   },
+  resetToken: String,
+  resetTokenExpiration: Date,
   cart: {
     items: [
       {
