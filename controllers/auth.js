@@ -4,6 +4,8 @@ const User = require("../models/user");
 
 const nodemailer = require("nodemailer");
 
+const { validationResult } = require("express-validator");
+
 let transporter = nodemailer.createTransport({
   host: "smtp-relay.brevo.com",
   port: 587,
@@ -34,6 +36,11 @@ exports.getLogin = (req, res, next) => {
     path: "/login",
     pageTitle: "Login.",
     errorMessage: message,
+    oldInput: {
+      email: "",
+      password: "",
+    },
+    validationErrors: [],
   });
 };
 
@@ -48,18 +55,46 @@ exports.getSignup = (req, res) => {
     path: "/signup",
     pageTitle: "Signup",
     errorMessage: message,
+    oldInput: {
+      email: "",
+      password: "",
+      confirmPassword: "",
+    },
+    validationErrors: [],
   });
 };
 
 exports.postLogin = (req, res, next) => {
   const email = req.body.email;
   const password = req.body.password;
+  const valErrors = validationResult(req);
+  if (!valErrors.isEmpty()) {
+    console.log(valErrors.array());
+    return res.status(422).render("auth/login", {
+      path: "/login",
+      pageTitle: "Login.",
+      errorMessage: valErrors.array()[0].msg,
+      oldInput: {
+        email: email,
+        password: password,
+      },
+      validationErrors: valErrors.array(),
+    });
+  }
   User.findOne({ email: email })
     .then(user => {
       if (!user) {
         console.log("User not found");
-        req.flash("error", "Invalid e-mail or password.");
-        res.redirect("/login");
+        return res.status(422).render("auth/login", {
+          path: "/login",
+          pageTitle: "Login.",
+          errorMessage: "Invalid e-mail or password.",
+          oldInput: {
+            email: email,
+            password: password,
+          },
+          validationErrors: valErrors.array(),
+        });
       }
       bcrypt
         .compare(password, user.password)
@@ -72,7 +107,17 @@ exports.postLogin = (req, res, next) => {
               res.redirect("/");
             });
           }
-          res.redirect("/login");
+          console.log("Invalid password");
+          return res.status(422).render("auth/login", {
+            path: "/login",
+            pageTitle: "Login.",
+            errorMessage: "Invalid e-mail or password.",
+            oldInput: {
+              email: email,
+              password: password,
+            },
+            validationErrors: valErrors.array(),
+          });
         })
         .catch(err => {
           console.log(err);
@@ -94,35 +139,42 @@ exports.postLogout = (req, res, next) => {
 exports.postSignUp = (req, res) => {
   const email = req.body.email;
   const password = req.body.password;
-  const confirmPassword = req.body.confirmPassword;
-  User.findOne({ email: email })
-    .then(user => {
-      if (user) {
-        req.flash("error", "User with this e-mail already exists.");
-        return res.redirect("/signup");
-      }
-      return bcrypt
-        .hash(password, 12)
-        .then(hashedPass => {
-          const newUser = new User({
-            email: email,
-            password: hashedPass,
-            cart: { items: [] },
-          });
-          return newUser.save();
-        })
-        .then(() => {
-          res.redirect("/login");
-          return transporter.sendMail({
-            to: email,
-            from: "shop@lyozha.com",
-            subject: "Signup succeeded!",
-            html: "<h1>Signup succeeded!</h1>",
-          });
-        })
-        .catch(err => {
-          console.log(err);
-        });
+  const valErrors = validationResult(req);
+  if (!valErrors.isEmpty()) {
+    console.log(valErrors.array());
+    return res.status(422).render("auth/signup", {
+      path: "/signup",
+      pageTitle: "Signup",
+      errorMessage: valErrors.array()[0].msg,
+      oldInput: {
+        email: email,
+        password: password,
+        confirmPassword: req.body.confirmPassword,
+      },
+      validationErrors: valErrors.array(),
+    });
+  }
+  bcrypt
+    .hash(password, 12)
+    .then(hashedPass => {
+      const newUser = new User({
+        email: email,
+        password: hashedPass,
+        cart: { items: [] },
+      });
+      return newUser.save();
+    })
+    .then(() => {
+      res.redirect("/login");
+      return transporter.sendMail({
+        to: email,
+        from: "shop@lyozha.com",
+        subject: "Signup succeeded!",
+        html: "<h1>Signup succeeded!</h1>",
+      });
+    })
+    .catch(err => {
+      console.log(err);
     })
     .catch(err => {
       console.log(err);
