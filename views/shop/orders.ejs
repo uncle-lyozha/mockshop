@@ -14,7 +14,7 @@
                             <h1>Order - # <%= order._id %>, Total amount: <%=order.amount%></h1>
                             <ul class="orders__products">
                                 <% order.items.forEach(product => { %>
-                                    <li class="orders__products-item"><%= product.products.title %>, quantity: (<%= product.quantity %>)</li>
+                                    <li class="orders__products-item"><%= product.products.title %>, quantity: (<%= product.quantity %>) - <a href="/orders/<%= order._id %>">Invoice</a></li>
                                     <li><img src="<%= product.products.imageUrl %>" hight="100" width="50"></li>
                                 <% }); %>
                             </ul>

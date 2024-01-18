@@ -26,11 +26,28 @@ exports.getAddProductsPage = (req, res, next) => {
 
 exports.postAddProduct = (req, res, next) => {
   const title = req.body.title;
-  const imageURL = req.body.imageUrl;
+  const image = req.file;
   const price = req.body.price;
   const description = req.body.description;
   const valErrors = validationResult(req);
 
+  if (!image) {
+    return res.status(422).render("admin/edit-product", {
+      path: "/admin/add-product",
+      pageTitle: "Add product",
+      editing: false,
+      hasError: true,
+      errorMessage: "Wrong image format",
+      oldInput: {
+        title: title,
+        price: price,
+        description: description,
+      },
+      validationErrors: [],
+    });
+  }
+
+  
   if (!valErrors.isEmpty()) {
     console.log(valErrors.array());
     return res.status(422).render("admin/edit-product", {
@@ -41,17 +58,19 @@ exports.postAddProduct = (req, res, next) => {
       errorMessage: valErrors.array()[0].msg,
       oldInput: {
         title: title,
-        imageURL: imageURL,
+        imageUrl: imageUrl,
         price: price,
         description: description,
       },
       validationErrors: valErrors.array(),
     });
   }
+  
+  const imageUrl = image.path;
 
   const product = new Product({
     title: title,
-    imageUrl: imageURL,
+    imageUrl: imageUrl,
     price: price,
     description: description,
     userId: req.session.user,
@@ -78,6 +97,7 @@ exports.postAddProduct = (req, res, next) => {
       //   },
       //   validationErrors: [],
       // });
+      console.log('Error while creating a product');
       const error = new Error(err);
       error.httpStatusCode = 500;
       return next(error);
@@ -127,7 +147,7 @@ exports.getEditProduct = (req, res, next) => {
 exports.postEditProduct = (req, res, next) => {
   const prodId = req.body.productId;
   const updatedTitle = req.body.title;
-  const updatedImageURL = req.body.imageUrl;
+  const updatedImage = req.file;
   const updatedDesc = req.body.description;
   const updatedPrice = req.body.price;
   const valErrors = validationResult(req);
@@ -142,7 +162,6 @@ exports.postEditProduct = (req, res, next) => {
       errorMessage: valErrors.array()[0].msg,
       oldInput: {
         title: updatedTitle,
-        imageURL: updatedImageURL,
         price: updatedPrice,
         description: updatedDesc,
       },
@@ -155,7 +174,9 @@ exports.postEditProduct = (req, res, next) => {
         return res.redirect("/");
       }
       product.title = updatedTitle;
-      product.imageUrl = updatedImageURL;
+      if (image) {
+        product.imageUrl = image.path;
+      }
       product.description = updatedDesc;
       product.price = updatedPrice;
       return product.save().then(() => {

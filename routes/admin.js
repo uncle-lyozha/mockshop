@@ -25,7 +25,6 @@ router.post(
       })
       .withMessage("Title should not be empty.")
       .trim(),
-    body("imageUrl").isURL().withMessage("Please provide a valid URL").trim(),
     body("description").trim(),
   ],
   isAuth,
@@ -41,7 +40,6 @@ router.post(
       .isString()
       .withMessage("Invalid characters in the title.")
       .trim(),
-    body("imageUrl").isURL().withMessage("Please provide a valid URL").trim(),
     body("description").trim(),
   ],
   isAuth,
