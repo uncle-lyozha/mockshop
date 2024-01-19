@@ -1,5 +1,7 @@
 const Product = require("../models/product");
 
+const fileHandler = require("../util/fileHandler");
+
 const { validationResult } = require("express-validator");
 
 exports.getAddProductsPage = (req, res, next) => {
@@ -17,7 +19,6 @@ exports.getAddProductsPage = (req, res, next) => {
     errorMessage: message,
     oldInput: {
       title: "",
-      imageURL: "",
       price: "",
       description: "",
     },
@@ -37,7 +38,7 @@ exports.postAddProduct = (req, res, next) => {
       pageTitle: "Add product",
       editing: false,
       hasError: true,
-      errorMessage: "Wrong image format",
+      errorMessage: "Invalid image format",
       oldInput: {
         title: title,
         price: price,
@@ -47,7 +48,6 @@ exports.postAddProduct = (req, res, next) => {
     });
   }
 
-  
   if (!valErrors.isEmpty()) {
     console.log(valErrors.array());
     return res.status(422).render("admin/edit-product", {
@@ -65,7 +65,6 @@ exports.postAddProduct = (req, res, next) => {
       validationErrors: valErrors.array(),
     });
   }
-  
   const imageUrl = image.path;
 
   const product = new Product({
@@ -97,7 +96,7 @@ exports.postAddProduct = (req, res, next) => {
       //   },
       //   validationErrors: [],
       // });
-      console.log('Error while creating a product');
+      console.log("Error while creating a product");
       const error = new Error(err);
       error.httpStatusCode = 500;
       return next(error);
@@ -131,7 +130,6 @@ exports.getEditProduct = (req, res, next) => {
         errorMessage: message,
         oldInput: {
           title: "",
-          imageURL: "",
           price: "",
           description: "",
         },
@@ -147,7 +145,7 @@ exports.getEditProduct = (req, res, next) => {
 exports.postEditProduct = (req, res, next) => {
   const prodId = req.body.productId;
   const updatedTitle = req.body.title;
-  const updatedImage = req.file;
+  const image = req.file;
   const updatedDesc = req.body.description;
   const updatedPrice = req.body.price;
   const valErrors = validationResult(req);
@@ -157,7 +155,7 @@ exports.postEditProduct = (req, res, next) => {
     return res.status(422).render("admin/edit-product", {
       path: "/admin/add-product",
       pageTitle: "Edit product",
-      editing: false,
+      editing: true,
       hasError: true,
       errorMessage: valErrors.array()[0].msg,
       oldInput: {
@@ -168,6 +166,7 @@ exports.postEditProduct = (req, res, next) => {
       validationErrors: valErrors.array(),
     });
   }
+
   Product.findById(prodId)
     .then(product => {
       if (product.userId.toString() !== req.user._id.toString()) {
@@ -175,6 +174,7 @@ exports.postEditProduct = (req, res, next) => {
       }
       product.title = updatedTitle;
       if (image) {
+        fileHandler.deleteFile(product.imageUrl);
         product.imageUrl = image.path;
       }
       product.description = updatedDesc;
@@ -211,7 +211,14 @@ exports.getProducts = (req, res, next) => {
 
 exports.postDeleteProduct = (req, res, next) => {
   const prodId = req.body.productId;
-  Product.findByIdAndDelete(prodId)
+  Product.findById(prodId)
+    .then(product => {
+      if (!product) {
+        return next(new Error("Product not found"));
+      }
+      fileHandler.deleteFile(product.imageUrl);
+      return Product.findByIdAndDelete(prodId);
+    })
     .then(product => {
       console.log(`Product Destroyed: \n ${product}`);
       res.redirect("/admin/products");

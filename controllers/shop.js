@@ -160,7 +160,7 @@ exports.getInvoice = (req, res, next) => {
       }
       const invoiceName = "invoice-" + orderId + ".pdf";
       const invoicePath = path.join("data", "invoices", invoiceName);
- 
+
       const pdf = new PDFDoc();
       res.setHeader("Content-Type", "application/pdf");
       res.setHeader(
@@ -171,7 +171,25 @@ exports.getInvoice = (req, res, next) => {
       pdf.pipe(fs.createWriteStream(invoicePath));
       pdf.pipe(res);
 
-      pdf.text("Invoice #");
+      pdf.fontSize(26).text("Invoice #" + order._id, {
+        underline: true,
+      });
+      pdf.text("--------------------------------");
+      let totalPrice = 0;
+      order.items.forEach(element => {
+        totalPrice += element.quantity * element.products.price;
+        pdf
+          .fontSize(14)
+          .text(
+            element.products.title +
+              "-" +
+              element.quantity +
+              " x " +
+              element.products.price
+          );
+      });
+      pdf.text("-----------");
+      pdf.fontSize(20).text("Total price: $" + totalPrice);
 
       pdf.end();
 
