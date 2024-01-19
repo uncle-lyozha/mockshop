@@ -9,6 +9,7 @@ const MongoStore = require("connect-mongodb-session")(session);
 const csrf = require("csurf");
 //adds flash messages, like errors
 const flash = require("connect-flash");
+const multer = require("multer");
 
 const MONGODB_URI = `mongodb+srv://${process.env.USER}:${process.env.PASS}@mockshop.o4n7ofw.mongodb.net/shop?retryWrites=true&w=majority`;
 
@@ -26,8 +27,32 @@ const csrfProtector = csrf();
 app.set("view engine", "ejs");
 app.set("views", "views");
 
+const fileStorage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    cb(null, "images");
+  },
+  filename: (req, file, cb) => {
+    cb(null, Date.now() + "-" + file.originalname);
+  },
+});
+
+const fileType = (req, file, cb) => {
+  if (
+    file.mimetype === "image/png" ||
+    file.mimetype === "image/jpg" ||
+    file.mimetype === "image/jpeg"
+  ) {
+    cb(null, true);
+  } else {
+    cb(null, false);
+  }
+};
+
 app.use(bodyParser.urlencoded({ extended: false }));
+app.use(multer({ storage: fileStorage, fileFilter: fileType }).single("image"));
+
 app.use(express.static(path.join(__dirname, "public")));
+app.use("/images", express.static(path.join(__dirname, "images")));
 app.use(
   session({
     secret: "some secret string",
