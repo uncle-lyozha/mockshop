@@ -11,7 +11,7 @@ const ITEMS_PER_PAGE = 4;
 exports.getProductsList = (req, res, next) => {
   const page = +req.query.page || 1;
   let totalItems;
-    Product.find()
+  Product.find()
     .countDocuments()
     .then(numProducts => {
       totalItems = numProducts;
@@ -29,7 +29,7 @@ exports.getProductsList = (req, res, next) => {
         hasPreviousPage: page > 1,
         nextPage: page + 1,
         previousPage: page - 1,
-        lastPage: Math.ceil(totalItems / ITEMS_PER_PAGE), 
+        lastPage: Math.ceil(totalItems / ITEMS_PER_PAGE),
       });
     })
     .catch(err => {
@@ -79,7 +79,7 @@ exports.getIndex = (req, res, next) => {
         hasPreviousPage: page > 1,
         nextPage: page + 1,
         previousPage: page - 1,
-        lastPage: Math.ceil(totalItems / ITEMS_PER_PAGE), 
+        lastPage: Math.ceil(totalItems / ITEMS_PER_PAGE),
       });
     })
     .catch(err => {
@@ -123,6 +123,30 @@ exports.postCardDeleteProd = (req, res, next) => {
     .removeFromCart(prodId)
     .then(() => {
       res.redirect("/cart");
+    })
+    .catch(err => {
+      const error = new Error(err);
+      error.httpStatusCode = 500;
+      return next(error);
+    });
+};
+
+exports.getCheckout = (req, res, next) => {
+  req.user
+    .populate("cart.items.productId")
+    // .execPopulate()
+    .then(user => {
+      const products = user.cart.items;
+      let total = 0;
+      products.forEach(p => {
+        total += p.quantity * p.productId.price;
+      });
+      res.render("shop/checkout", {
+        pageTitle: "Checkout",
+        path: "/checkout",
+        products: products,
+        totalSum: total,
+      });
     })
     .catch(err => {
       const error = new Error(err);
